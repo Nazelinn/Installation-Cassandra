@@ -143,7 +143,7 @@
      slack:
       token: "T029AES6D/x/x"
       msg: '{{ ansible_ssh_host }} {{ hostvars[inventory_hostname]["ansible_default_ipv4"]["address"] }} Cassandra kurulumu tamamlandi. PMM kurulumu gerceklestirildi. User: cassandra Password: cassandra '
-      channel: #db_ansible_alerts
+      channel: #nazelintest
       color: good
       username: ''
       icon_url: ''
