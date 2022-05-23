@@ -1,0 +1,10 @@
+- hosts: cassandra_dbdashboard
+  gather_facts: no
+  tasks:
+   - name: Edit dbdashboard machine prometheus.yml
+     lineinfile:
+       dest: /home/prometheus/prometheus/tg_mcac.json
+       insertafter: '"targets": \['
+       line: '      "{{ item }}:9103",'
+       state: present
+     with_items: '{{ groups["cassandra_servers_dbdashboard"] | reverse | list }}'

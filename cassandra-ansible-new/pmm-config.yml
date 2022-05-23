@@ -1,0 +1,17 @@
+- 
+  hosts: cassandra_servers
+  tasks: 
+    - 
+      lineinfile: 
+        dest: /opt/datastax-mcac/config/metric-collector.yaml
+        line: "{{item.To}}"
+        regexp: "{{item.From}}"
+      name: "replace line in  \"/opt/datastax-mcac/config/metric-collector.yaml\""
+      with_items: 
+        - 
+          From: "#data_dir: /var/lib/cassandra"
+          To: "data_dir: /cas-data"
+        - 
+          From: "#log_dir: /var/log/cassandra"
+          To: "log_dir: /cas-commitlog"
+

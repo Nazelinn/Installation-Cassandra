@@ -1,0 +1,10 @@
+ - hosts: cassandra_servers
+   tasks: 
+    - 
+      lineinfile: 
+        dest: /etc/cassandra/default.conf/cassandra-env.sh
+        line: "{{ item }}"
+      name: "Insert a line at the end of a file."
+      with_items: 
+        - MCAC_ROOT=/opt/datastax-mcac
+        - "JVM_OPTS=\"$JVM_OPTS -javaagent:${MCAC_ROOT}/lib/datastax-mcac-agent.jar\""

@@ -1,0 +1,9 @@
+- hosts: cassandra-dbdashboard
+  tasks:
+   - name: Edit dbdashboard machine prometheus.yml
+     lineinfile:
+       dest: /home/prometheus/prometheus/tg_mcaccc.json
+       regexp: '.*{{ item }}$'
+       line: "       {{ [item].ansible_default_ipv4.address }}:9103'"
+       state: present
+     with_items: '{{ groups["cassandra-servers-dbdashboard"] }}'

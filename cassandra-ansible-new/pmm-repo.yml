@@ -1,0 +1,10 @@
+- 
+  hosts: cassandra_servers
+  tasks: 
+    - 
+      name: "install repo and tar"
+      shell: |-
+          cd /opt/
+          wget https://github.com/datastax/metric-collector-for-apache-cassandra/releases/download/v0.1.11/datastax-mcac-agent-0.1.11.tar.gz
+          tar -xf datastax-mcac-agent-0.1.11.tar.gz
+          mv datastax-mcac-agent-0.1.11 datastax-mcac

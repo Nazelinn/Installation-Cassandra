@@ -1,0 +1,141 @@
+- hosts: cassandra_servers
+  gather_facts: yes
+  become: false
+  tasks:
+
+  - name: Change file ownership, group and permissions
+    ansible.builtin.file:
+      path: "{{ item }}"
+      state: directory
+      recurse: yes
+      owner: cassandra
+      group: cassandra
+      mode: '0700'
+    with_items:
+    - "/cas-data"
+    - "/cas-commitlog"
+
+
+  - name: Configure the Apache Cassandra YUM Repository
+    yum_repository:
+      name: cassandra
+      baseurl: "https://www.apache.org/dist/cassandra/redhat/40x/"
+      gpgcheck: true
+      description: Apache Cassandra
+      repo_gpgcheck: true
+      gpgkey: https://www.apache.org/dist/cassandra/KEYS
+
+  - name: installl
+    yum: 
+      name: '{{item}}'
+      state: present
+    with_items:  
+      - cassandra
+      - java
+
+  - name: replace line in  "/etc/cassandra/default.conf/cassandra.yaml"
+    lineinfile:
+      dest: /etc/cassandra/default.conf/cassandra.yaml
+      regexp: '{{item.From}}'
+      line: '{{item.To}}'
+    with_items:
+     - { From: 'data_file_directoriest: /var/lib/cassandra/data', To: 'data_file_directories: /cas-data/'}
+     - { From: 'commitlog_directory: /var/lib/cassandra/commitlog', To: 'commitlog_directory: /cas-commitlog/'}
+     - { From: 'endpoint_snitch: SimpleSnitch', To: 'endpoint_snitch: GossipingPropertyFileSnitch'}
+     - { From: 'authenticator: AllowAllAuthenticator', To: 'authenticator: PasswordAuthenticator'}
+     - { From: 'cluster_name: Test Cluster', To: 'cluster_name: {{cluster_name}}'}
+
+
+  - name: replace line in  "/etc/cassandra/default.conf/jvm-server.options"
+    lineinfile:
+      dest: /etc/cassandra/default.conf/jvm-server.options
+      regexp: '{{item.From}}'
+      line: '{{item.To}}'
+    with_items:
+     - { From: '#Xms4G', To: 'Xms12G'}
+     - { From: '#Xmx4G', To: 'Xmx12G'}
+     - { From: '#Xmn800M', To: 'Xmn6G'} 
+
+
+  - name: Copy configuration file (cassandra.yaml)
+    template:
+       src: cassandra.yaml.j2
+       dest: /etc/cassandra/default.conf/cassandra.yaml 
+
+
+  - name: Copy configuration file (cassandra-rackdc.properties)
+    template:
+       src: cassandra-rackdc.properties.j2 
+       dest: /etc/cassandra/default.conf/cassandra-rackdc.properties
+
+  #- name: Cassandra service file copy
+   # copy:
+    #  src: cassandra-create-service.j2
+     # dest: /etc/systemd/system/cassandra.service  
+
+
+ # - name: Cassandra Start
+  #  service:
+   #  name: cassandra
+    # state: started
+
+  #- name: Cassandra Restart 
+   # service:
+    # name: cassandra
+     #state: restarted
+
+ # - name: again restart cassandra
+  #  shell: |
+   #   sudo systemctl restart cassandra.service
+
+  - name: Start and Restart cassandra
+    shell: |   
+      sudo service cassandra start
+      sudo service cassandra restart
+
+  - name: Again Restart Cassandra
+    shell: |
+      sudo service cassandra restart
+
+  -  name: Insert a line at the end of a file For Monitoring
+     lineinfile:
+        dest: /etc/cassandra/default.conf/cassandra-env.sh
+        line: "{{ item }}"
+     with_items:
+        - MCAC_ROOT=/opt/datastax-mcac
+        - "JVM_OPTS=\"$JVM_OPTS -javaagent:${MCAC_ROOT}/lib/datastax-mcac-agent.jar\""
+ 
+
+  -  name: PMM Agent Install Repo For Monitoring
+     shell: |-
+       cd /opt/
+       wget https://github.com/datastax/metric-collector-for-apache-cassandra/releases/download/v0.1.11/datastax-mcac-agent-0.1.11.tar.gz
+       tar -xf datastax-mcac-agent-0.1.11.tar.gz
+        mv datastax-mcac-agent-0.1.11 datastax-mcac
+ 
+ 
+  - name: Replace Line in  /opt/datastax-mcac/config/metric-collector.yaml For Monitoring
+    lineinfile:
+      dest: /opt/datastax-mcac/config/metric-collector.yaml
+      regexp: "{{item.From}}"
+      line: "{{item.To}}"
+    with_items:
+      - { From: "#data_dir: /var/lib/cassandra", To: "data_dir: /cas-data" }
+      - { From: "#log_dir: /var/log/cassandra", To: "log_dir: /cas-commitlog" }
+
+  - name: Restart Cassandra Servers For Monitoring
+    shell: |
+      sudo service cassandra restart
+
+- hosts: cassandra_dbdashboard
+  gather_facts: no
+  tasks:
+   - name: Edit dbdashboard machine prometheus.yml
+     lineinfile:
+       dest: /home/prometheus/prometheus/tg_mcaccc.json
+       insertafter: '"targets": \['
+       line: '      "{{ item }}:9103",'
+       state: present
+     with_items: '{{ groups["cassandra_servers_dbdashboard"] | reverse | list }}'
+
+                                     
