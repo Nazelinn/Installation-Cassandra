@@ -1,2 +1,7 @@
 # Installation-Cassandra
-. Cassandra Installation . Cassandra.yaml ve cassandra-rackdc.properties.yaml dosylarının düzelenmesi . Cassandra Best practice için editlemelerin yapılması . Cassandra Cluster Yapısının kurulması . PMM Monitoring ayarlarının yapılması . Kurulum tamamlandığında slack kanalına alert atılması
+. Cassandra Installation
+. Editing cassandra.yaml and cassandra-rackdc.properties.yaml
+. Making edits for Cassandra Best practice 
+. Establishing the Cassandra Cluster Structure
+. Making PMM Monitoring settings 
+. Sending an alert to the slack channel when the installation is complete
